@@ -42,10 +42,62 @@ export class ApiHandler {
      */
     private handleRequestMachine(request: RequestMachineRequestModel): MachineResponseModel {
         // Your implementation here
-        // requested_location_ID: string = request.locationId
-        // requested_job_ID: string = request.jobId
+        const requested_location_ID: string = request.locationId;
+        const requested_job_ID: string = request.jobId;
+        const table_instance = MachineStateTable.getInstance();
+        const machines_at_location: MachineStateDocument[] = table_instance.listMachinesAtLocation(requested_location_ID);
+        const number_of_machines_at_location = machines_at_location.length
+
+        //do a quick check if there are no machines from the database
+        if (number_of_machines_at_location === 0){
+            return{statusCode:HttpResponseCode.NOT_FOUND,machine: undefined};
+        }
+
+        const available_machines_at_location = machines_at_location.filter((machine)=>machine.status === MachineStatus.AVAILABLE);
+        const number_of_available_machines_at_locaiton = available_machines_at_location.length
+
+        //another quick check if there are no available machines from the database for a more specific error... BAD_REQUEST in stead of NOT_FOUND
+        if (number_of_available_machines_at_locaiton === 0){
+            return{statusCode:HttpResponseCode.BAD_REQUEST,machine: undefined};
+        }
+
+        //we know we can do this because we did a check on length
+        const first_available_machine = available_machines_at_location[0];
+        const curr_machine_id = first_available_machine.machineId;
 
 
+        /* these are the interfaces we need to call to update the machines attributes in the database
+
+            public updateMachineStatus(machineId: string, status: MachineStatus) {
+                MachineStateTable.dbAccesses++;
+                this.consume(DATABASE_WRITE);
+                const machine = this.machines.get(machineId);
+                if (machine) {
+                    machine.status = status;
+                }
+            }
+
+            public updateMachineJobId(machineId: string, jobId: string) {
+                MachineStateTable.dbAccesses++;
+                this.consume(DATABASE_LAZY_WRITE);
+                const machine = this.machines.get(machineId);
+                if (machine) {
+                    machine.currentJobId = jobId;
+                }
+            }
+
+        */
+
+        table_instance.updateMachineStatus(curr_machine_id, MachineStatus.AWAITING_DROPOFF);
+        table_instance.updateMachineJobId(curr_machine_id, requested_job_ID );
+
+        //make sure we pull the updated machine from the database to put in the cache
+        const updated_machine = table_instance.getMachine(curr_machine_id);
+        const curr_cache_instance = DataCache.getInstance<MachineStateDocument>();
+        curr_cache_instance.put(curr_machine_id, updated_machine!);
+
+
+        return {statusCode: HttpResponseCode.OK,machine: updated_machine};
     }
 
     /**
