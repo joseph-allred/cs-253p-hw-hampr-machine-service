@@ -27,7 +27,7 @@ export class ApiHandler {
             return;
         }
         else{
-            throw{statusCode:HttpResponseCode.UNAUTHORIZED, thrownMessage:"ERROR!!! The Token isn't valid!!!\n"};
+            throw{statusCode:HttpResponseCode.UNAUTHORIZED, thrownMessage:"ERROR: checkToken implementation flagged as unauthorized\n"};
         }
     }
 
