@@ -161,7 +161,11 @@ export class ApiHandler {
         //need to wrap the startCycle API call in a try catch to throw the appropriate hardware error for tests
         try {api_instance.startCycle(curr_machine_id);
         }catch (error){
-            return {statusCode:HttpResponseCode.HARDWARE_ERROR,machine:curr_machine};
+            //actually gotta do some more thorough stuff here with the error machine
+            curr_table_instance.updateMachineStatus(curr_machine_id, MachineStatus.ERROR);
+            let updated_machine = curr_table_instance.getMachine(curr_machine_id);
+            curr_cache_instance.put(curr_machine_id, updated_machine!);
+            return {statusCode:HttpResponseCode.HARDWARE_ERROR,machine:updated_machine};
         }
 
         curr_table_instance.updateMachineStatus(curr_machine_id, MachineStatus.RUNNING);
