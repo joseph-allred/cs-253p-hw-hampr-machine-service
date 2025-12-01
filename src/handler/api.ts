@@ -138,7 +138,33 @@ export class ApiHandler {
      * @returns A response model with the status code and the updated machine's state.
      */
     private handleStartMachine(request: StartMachineRequestModel): MachineResponseModel {
-        // Your implementation here
+        const curr_machine_id = request.machineId;
+
+        //gonna repeat same process from last method of trying cache then trying db
+        const curr_cache_instance = DataCache.getInstance<MachineStateDocument>();
+        let curr_machine = curr_cache_instance.get(curr_machine_id);
+        const curr_table_instance = MachineStateTable.getInstance();
+        
+        if(curr_machine === undefined){
+            curr_machine = curr_table_instance.getMachine(curr_machine_id);
+            if (curr_machine === undefined){
+                return {statusCode: HttpResponseCode.NOT_FOUND,machine: undefined};
+            }
+        }
+
+        const curr_machine_status = curr_machine.status;
+        if (curr_machine_status != MachineStatus.AWAITING_DROPOFF){
+            return {statusCode: HttpResponseCode.BAD_REQUEST,machine: undefined};
+        }
+
+        const api_instance = SmartMachineClient.getInstance();
+        api_instance.startCycle(curr_machine_id);
+
+        curr_table_instance.updateMachineStatus(curr_machine_id, MachineStatus.RUNNING);
+        const updated_machine = curr_table_instance.getMachine(curr_machine_id);
+        curr_cache_instance.put(curr_machine_id, updated_machine!);
+
+        return {statusCode: HttpResponseCode.OK,machine: updated_machine};
     }
 
     /**
