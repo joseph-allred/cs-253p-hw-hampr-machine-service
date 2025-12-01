@@ -158,7 +158,11 @@ export class ApiHandler {
         }
 
         const api_instance = SmartMachineClient.getInstance();
-        api_instance.startCycle(curr_machine_id);
+        //need to wrap the startCycle API call in a try catch to throw the appropriate hardware error for tests
+        try {api_instance.startCycle(curr_machine_id);
+        }catch (error){
+            return {statusCode:HttpResponseCode.HARDWARE_ERROR,machine:curr_machine};
+        }
 
         curr_table_instance.updateMachineStatus(curr_machine_id, MachineStatus.RUNNING);
         const updated_machine = curr_table_instance.getMachine(curr_machine_id);
