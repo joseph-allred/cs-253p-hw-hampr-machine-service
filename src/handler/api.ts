@@ -107,7 +107,27 @@ export class ApiHandler {
      * @returns A response model with the status code and the machine's state.
      */
     private handleGetMachine(request: GetMachineRequestModel): MachineResponseModel {
-        // Your implementation here
+        const curr_machine_id = request.machineId;
+
+        //check cache first!
+        const curr_cache_instance = DataCache.getInstance<MachineStateDocument>();
+        let curr_machine = curr_cache_instance.get(curr_machine_id);
+
+        if(curr_machine === undefined){
+            //gotta get it from table :/
+            const curr_table_instance = MachineStateTable.getInstance();
+            curr_machine = curr_table_instance.getMachine(curr_machine_id);
+
+            if (curr_machine === undefined){
+                //if we STILL can't find it, return appropriate NOT_FOUND error
+                return {statusCode: HttpResponseCode.NOT_FOUND,machine: undefined};
+            }
+            //otherwise we can throw it in the cache if we got it from the table
+            curr_cache_instance.put(curr_machine_id, curr_machine);
+        }
+
+        return{statusCode:HttpResponseCode.OK, machine:curr_machine};
+
     }
 
     /**
