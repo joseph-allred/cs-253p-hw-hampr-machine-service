@@ -154,7 +154,7 @@ export class ApiHandler {
 
         const curr_machine_status = curr_machine.status;
         if (curr_machine_status != MachineStatus.AWAITING_DROPOFF){
-            return {statusCode: HttpResponseCode.BAD_REQUEST,machine: undefined};
+            return {statusCode: HttpResponseCode.BAD_REQUEST,machine: curr_machine};
         }
 
         const api_instance = SmartMachineClient.getInstance();
