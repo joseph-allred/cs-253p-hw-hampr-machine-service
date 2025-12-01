@@ -21,7 +21,14 @@ export class ApiHandler {
      * @throws An error if the token is invalid.
      */
     private checkToken(token: string) {
-        // Your implementation here
+        const instance_of_IP = IdentityProviderClient.getInstance();
+        const validity_of_token = instance_of_IP.validateToken(token);
+        if(validity_of_token === true){
+            return;
+        }
+        else{
+            throw{statusCode:HttpResponseCode.BAD_REQUEST, thrownMessage:"ERROR!!! The Token isn't valid!!!\n"};
+        }
     }
 
     /**
@@ -35,6 +42,10 @@ export class ApiHandler {
      */
     private handleRequestMachine(request: RequestMachineRequestModel): MachineResponseModel {
         // Your implementation here
+        // requested_location_ID: string = request.locationId
+        // requested_job_ID: string = request.jobId
+
+
     }
 
     /**
